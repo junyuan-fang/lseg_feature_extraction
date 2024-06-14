@@ -52,19 +52,19 @@ class LSegModule(LSegmentationModule):
         self.train_transform = transforms.Compose(train_transform)
         self.val_transform = transforms.Compose(val_transform)
 
-        self.trainset = self.get_trainset(
-            dataset,
-            augment=kwargs["augment"],
-            base_size=self.base_size,
-            crop_size=self.crop_size,
-        )
+        # self.trainset = self.get_trainset(
+        #     dataset,
+        #     augment=kwargs["augment"],
+        #     base_size=self.base_size,
+        #     crop_size=self.crop_size,
+        # )
         
-        self.valset = self.get_valset(
-            dataset,
-            augment=kwargs["augment"],
-            base_size=self.base_size,
-            crop_size=self.crop_size,
-        )
+        # self.valset = self.get_valset(
+        #     dataset,
+        #     augment=kwargs["augment"],
+        #     base_size=self.base_size,
+        #     crop_size=self.crop_size,
+        # )
 
         use_batchnorm = (
             (not kwargs["no_batchnorm"]) if "no_batchnorm" in kwargs else True
@@ -92,7 +92,9 @@ class LSegModule(LSegmentationModule):
         self.mean = norm_mean
         self.std = norm_std
 
-        self.criterion = self.get_criterion(**kwargs)
+        
+
+        #self.criterion = self.get_criterion(**kwargs)
 
     def get_labels(self, dataset):
         labels = []

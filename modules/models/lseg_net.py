@@ -10,6 +10,11 @@ import clip
 import numpy as np
 import pandas as pd
 import os
+from sklearn.utils.validation import check_is_fitted
+
+
+
+
 
 class depthwise_clipseg_conv(nn.Module):
     def __init__(self):
@@ -156,7 +161,7 @@ class LSeg(BaseModel):
         self.scratch.output_conv = head
 
         self.text = clip.tokenize(self.labels)    
-        
+
     def forward(self, x, labelset=''):
         if labelset == '':
             text = self.text
@@ -185,22 +190,67 @@ class LSeg(BaseModel):
         image_features = self.scratch.head1(path_1)
 
         imshape = image_features.shape
+        #print(imshape)#torch.Size([1, 512, 240, 240])
         image_features = image_features.permute(0,2,3,1).reshape(-1, self.out_c)
 
         # normalized features
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+
+
+        if labelset == '': #! songyou hack to return only last layer feature
+            return image_features.float().view(imshape[0], imshape[2], imshape[3], -1).permute(0,3,1,2)
+        #         # 定义一个函数进行SVD降维
+        # def svd_dim_reduction(tensor, n_components):
+        #         # 将张量移到CPU并转换为numpy数组，并转换为float32类型
+        #     tensor_np = tensor.cpu().numpy().astype(np.float32)
+            
+        #     # 进行SVD分解
+        #     U, S, Vt = np.linalg.svd(tensor_np, full_matrices=False)
+            
+        #     # 只取前n_components个奇异值和对应的向量
+        #     U_reduced = U[:, :n_components]
+        #     S_reduced = S[:n_components]
+        #     Vt_reduced = Vt[:n_components, :]
+            
+        #     # 构建降维后的矩阵
+        #     reduced_tensor_np = np.dot(U_reduced, np.diag(S_reduced))
+            
+        #     # 转换回张量并移到原始设备
+        #     reduced_tensor = torch.from_numpy(reduced_tensor_np).to(tensor.device)
+        #     return reduced_tensor
+
+
+        # # 定义降维后的维度
+        # n_components = 30
+
+        # # 对image_features进行降维
+        # image_features_reduced = svd_dim_reduction(image_features, n_components)
+
+        # # 对text_features进行降维
+        # text_features_reduced = svd_dim_reduction(text_features, n_components)
+        # print("text_features_reduced.shape", text_features_reduced.shape)
         
+        #logits_per_image = self.logit_scale * image_features.half() @ text_features.t()
         logits_per_image = self.logit_scale * image_features.half() @ text_features.t()
+        #print("logits_per_image.shape", logits_per_image.shape)#logits_per_image.shape torch.Size([57600, 2]) = 240*240
+
+        # output = nn.functional.interpolate(output, scale_factor=2, mode="bilinear", align_corners=True
+        # )
+        # return output
 
         out = logits_per_image.float().view(imshape[0], imshape[2], imshape[3], -1).permute(0,3,1,2)
-
+        #print(out.shape)#torch.Size([1, 2, 240, 240])
         if self.arch_option in [1, 2]:
             for _ in range(self.block_depth - 1):
                 out = self.scratch.head_block(out)
             out = self.scratch.head_block(out, False)
 
         out = self.scratch.output_conv(out)
+        #print(out.shape)#torch.Size([1, 2, 480, 480])
+
+        # print(min(out))
+        # print(max(out))
             
         return out
 

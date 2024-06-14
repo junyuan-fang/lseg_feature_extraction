@@ -14,7 +14,7 @@ import torch
 from torch.cuda._utils import _get_device_index
 from torch.cuda.amp import autocast
 from torch._utils import ExceptionWrapper
-
+from sklearn.decomposition import PCA
 
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
 
@@ -31,6 +31,8 @@ class LSeg_MultiEvalModule(DataParallel):
         self.scales = scales
         self.flip = flip
 
+        self.pca_visual = PCA(n_components=30)
+        self.pca_text = PCA(n_components=30)
         print('MultiEvalModule: base_size {}, crop_size {}'. \
             format(self.base_size, self.crop_size))
 
@@ -53,7 +55,6 @@ class LSeg_MultiEvalModule(DataParallel):
             kwargs.extend([{} for _ in range(len(inputs) - len(kwargs))])
         outputs = parallel_apply(replicas, inputs, label_set, kwargs)
         return outputs
-    
 
     def forward(self, image, label_set=''):
         """Mult-size Evaluation"""
@@ -97,9 +98,6 @@ class LSeg_MultiEvalModule(DataParallel):
                                     self.module.std, crop_size)
                 outputs = module_inference(self.module, pad_img, label_set, self.flip)
                 outputs = crop_image(outputs, 0, height, 0, width)
-
-                if label_set == '': #! songyou: return only last layer feature
-                    return outputs
             else:
                 if short_size < crop_size:
                     # pad if needed
