@@ -1,3 +1,7 @@
+# Feature extraction
+Self made feature extraction from Lseg is inside the `lseg_per_pixel_feature_scannet.ipynb` file
+
+
 # Language-driven Semantic Segmentation (LSeg)
 The repo contains official PyTorch Implementation of paper [Language-driven Semantic Segmentation](https://arxiv.org/abs/2201.03546). 
 
